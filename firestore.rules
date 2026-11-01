@@ -1,0 +1,27 @@
+rules_version = '2';
+// Reglas de la base de datos de Integral Motor.
+// Solo entran: el administrador y los mails que él habilite desde la app (Respaldo → Usuarios).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function logueado() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function admin() {
+      return logueado() && request.auth.token.email.lower() == 'galazmauro90@gmail.com';
+    }
+    function habilitado() {
+      return admin() || (logueado()
+        && exists(/databases/$(database)/documents/config/usuarios)
+        && request.auth.token.email.lower() in get(/databases/$(database)/documents/config/usuarios).data.emails);
+    }
+    // lista de usuarios: la ven todos los habilitados, la cambia solo el administrador
+    match /config/usuarios {
+      allow read: if habilitado();
+      allow write: if admin();
+    }
+    // todo lo demás (presupuestos, clientes, caja, stock, precios...)
+    match /{coleccion}/{id} {
+      allow read, write: if habilitado() && !(coleccion == 'config' && id == 'usuarios');
+    }
+  }
+}
