@@ -7,7 +7,7 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.firebase.sign_in_provider == 'google.com' && request.auth.token.email_verified == true;
     }
     function admin() {
-      return google() && request.auth.token.email.lower() == 'rectificacionesim@gmail.com';
+      return google() && request.auth.token.email.lower() in ['rectificacionesim@gmail.com', 'galazmauro90@gmail.com'];
     }
     function lista() {
       return get(/databases/$(database)/documents/config/usuarios).data;

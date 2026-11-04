@@ -51,7 +51,8 @@ a.btn{display:inline-block;font:inherit;padding:9px 12px;border-radius:8px;backg
 /* ===== Fuera de Claude: los datos se guardan en Firebase (Google) y se entra con la cuenta de Google.
    Adentro de Claude esto no se usa y todo sigue igual. ===== */
 const FB_CFG={"apiKey": "AIzaSyBasw_n3frIlIZKuynQAFNyAYti9QYthD8", "authDomain": "integral-motor.firebaseapp.com", "projectId": "integral-motor", "storageBucket": "integral-motor.firebasestorage.app", "messagingSenderId": "31704405107", "appId": "1:31704405107:web:e81f92d6717bc8c6c2c606"}; /* configuración del proyecto de Firebase (se completa al mudar la app) */
-const FB_ADMIN="rectificacionesim@gmail.com"; /* mail del administrador: siempre puede entrar y habilita a los demás */
+const FB_ADMIN="rectificacionesim@gmail.com,galazmauro90@gmail.com"; /* mail del administrador: siempre puede entrar y habilita a los demás */
+const ADMS=()=>String(FB_ADMIN||'').toLowerCase().split(/[,;\s]+/).filter(Boolean); /* uno o más mails de administrador */
 let FBU=null; /* {email, admin, emails, perm, uid, pw} cuando se usa Firebase */
 const UDOM='@integralmotor.local',isPw=m=>/@integralmotor\.local$/.test(m||''),uName=m=>isPw(m)?m.slice(0,-UDOM.length):m;let LGU='';
 const ENCL=!!window.claude;
@@ -88,7 +89,7 @@ async function fbDB(){fbGate('Cargando…');
  try{await fs.enablePersistence({synchronizeTabs:true})}catch(x){}
  const au=firebase.auth();au.getRedirectResult().catch(()=>{});
  const user=await new Promise(ok=>au.onAuthStateChanged(u=>{if(u)ok(u);else fbGate('Entrá con tu cuenta de Google o con el usuario y la contraseña que te dio el administrador.',1)}));
- const email=(user.email||'').toLowerCase(),gg=(user.providerData||[]).some(x=>x&&x.providerId=='google.com'),admin=gg&&!!FB_ADMIN&&email==FB_ADMIN.toLowerCase();fbGate('Revisando el acceso de '+uName(email)+'…');
+ const email=(user.email||'').toLowerCase(),gg=(user.providerData||[]).some(x=>x&&x.providerId=='google.com'),admin=gg&&ADMS().includes(email);fbGate('Revisando el acceso de '+uName(email)+'…');
  let emails=[],perm=[];
  try{const s=await fs.doc('config/usuarios').get();if(s.exists){const d=fbDec(s.data());emails=d.emails||[];perm=d.perm||[]}}
  catch(x){if((x&&x.code)=='permission-denied'){fbGate((isPw(email)?'El usuario '+uName(email)+' no está habilitado':'La cuenta '+email+' no está habilitada')+'. Pedile al administrador que lo habilite en Configuración → Usuarios.',0,1);return new Promise(()=>{})}}
@@ -738,7 +739,7 @@ const usrL=()=>FBU?[...(FBU.emails||[]).map(m=>({m})),...(FBU.perm||[]).filter(x
 function usrSave(emails,perm){return db.doc('config/usuarios').set({emails,uids:perm.filter(x=>x&&x.uid).map(x=>x.uid),perm}).then(()=>usrMsg('okc','Guardado ✓')).catch(()=>usrMsg('dc','No se pudo guardar.'))}
 function usrAdd(){const i=$('#usr_m'),v=((i&&i.value)||'').trim().toLowerCase(),L=(FBU&&FBU.emails)||[];
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)||isPw(v)){usrMsg('dc','Escribí un mail de Google válido.');return}
- if(v==(FB_ADMIN||'').toLowerCase()){usrMsg('dc','Ese mail es el del administrador: ya puede todo.');return}
+ if(ADMS().includes(v)){usrMsg('dc','Ese mail es el del administrador: ya puede todo.');return}
  if(!L.includes(v))usrSave([...L,v],[...((FBU&&FBU.perm)||[]).filter(x=>x&&x.m!=v),{m:v,p:[]}]).then(()=>usrMsg('okc','Agregado ✓ Tildá qué puede hacer.'));if(i)i.value=''}
 async function usrNewPw(){const u=(($('#nu_u')||{}).value||'').trim().toLowerCase(),p=($('#nu_p')||{}).value||'';
  if(!/^[a-z0-9._-]{3,20}$/.test(u)){usrMsg('dc','El usuario tiene que tener de 3 a 20 letras o números, sin espacios ni tildes.');return}
@@ -756,7 +757,7 @@ async function pwChg(){const a=(($('#pw_a')||{}).value||''),b=(($('#pw_b')||{}).
  try{await firebase.auth().currentUser.updatePassword(a);pwMsg('okc','Contraseña cambiada ✓');$('#pw_a').value='';$('#pw_b').value=''}
  catch(x){pwMsg('dc',/requires-recent-login/.test((x&&x.code)||'')?'Por seguridad, cerrá sesión, volvé a entrar y probá de nuevo.':'No se pudo cambiar la contraseña.')}}
 const vUsr=()=>!FBU?'':`<div class=card><b>Tu cuenta</b><p class=mu style="margin:4px 0 2px">${FBU.pw?'Usuario: <b>'+e(uName(FBU.email))+'</b>':e(FBU.email)}${FBU.admin?' · administrador':''}</p><p class=mu style="margin:0 0 8px">Puede: ${e(pmTx(myPerm()))}</p>${FBU.pw?`<details style="margin:0 0 8px"><summary>Cambiar mi contraseña</summary><div class=g style="margin-top:8px"><input id=pw_a type=password placeholder="Contraseña nueva" autocomplete=new-password><input id=pw_b type=password placeholder="Repetila" autocomplete=new-password></div><button class=pri onclick="pwChg()" style="margin-top:8px">Cambiar contraseña</button><p id=pwm class=${PWM[0]}>${e(PWM[1])}</p></details>`:''}<button onclick="fbOut()">Cerrar sesión</button></div>`+(!FBU.admin?'':`<div class=card><b>Usuarios y permisos</b><p class=mu style="margin:4px 0 6px">Tildá qué puede hacer cada uno. Sin nada tildado, solo puede ver presupuestos, órdenes y clientes.</p>
-<div class=usr><div class=row><span style="word-break:break-all"><b>${e(FB_ADMIN)}</b> <span class=mu>(administrador · Google)</span></span></div><div class=pmg><label class=chk><input type=checkbox checked disabled>Todo</label></div></div>
+<div class=usr><div class=row><span style="word-break:break-all">${ADMS().map(x=>`<b>${e(x)}</b>`).join('<br>')} <span class=mu>(administrador${ADMS().length>1?'es':''} · Google)</span></span></div><div class=pmg><label class=chk><input type=checkbox checked disabled>Todo</label></div></div>
 ${usrL().map((x,i)=>{const p=usrP(x.m),T=p.includes('todo');return `<div class=usr><div class=row><span style="word-break:break-all"><b>${e(uName(x.m))}</b> <span class=mu>(${x.uid?'usuario y contraseña':'Google'})</span></span>${TB(`usrDel(${i})`,'Quitar usuario')}</div><div class=pmg>${Object.entries(PMK).map(([k,l])=>`<label class=chk><input type=checkbox ${T||p.includes(k)?'checked':''} ${k!='todo'&&T?'disabled':''} onchange="usrPm(${i},'${k}',this.checked)">${l}</label>`).join('')}</div></div>`}).join('')}
 <p id=usrm class=${USRM[0]}>${e(USRM[1])}</p>
 <div class=usr><b>Crear usuario con contraseña</b><p class=mu style="margin:2px 0 6px">Para los del taller: entran con un nombre de usuario y la contraseña que les des (6 caracteres o más).</p><div class=g><input id=nu_u placeholder="Usuario (ej: juan)" autocapitalize=none spellcheck=false autocomplete=off><input id=nu_p placeholder="Contraseña" autocomplete=off></div><button class=pri onclick="usrNewPw()" style="margin-top:8px">${PLI}Crear usuario</button></div>
