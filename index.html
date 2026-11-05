@@ -138,8 +138,8 @@ async function init(){
    db.collection("stock").onSnapshot(s=>{STK=s.docs.map(d=>({...JSON.parse(JSON.stringify(d.data())),id:d.id}));render()});
    db.collection("stockmov").onSnapshot(s=>{SMV=s.docs.map(d=>({...JSON.parse(JSON.stringify(d.data())),id:d.id}));render()});
    db.collection("egresos").onSnapshot(s=>{EGR=s.docs.map(d=>({...JSON.parse(JSON.stringify(d.data())),id:d.id}));render()});
-   db.doc("config/precios").onSnapshot(s=>{if(dirty||saving)return;CAT=JSON.parse(JSON.stringify((s.exists&&s.data())||{}));if(addVeh()|migP()|migL()|migK()|migR2())savePr();render()});
- }else{P=LS.get(K+'p',[]);CAT=LS.get(K+'c',{});if(addVeh()|migP()|migL()|migK()|migR2())LS.set(K+'c',CAT);CLI=LS.get(K+'cl',[]);SAL=LS.get(K+'sa',[]);EGR=LS.get(K+'eg',[]);PRV=LS.get(K+'pv',[]);STK=LS.get(K+'st',[]);SMV=LS.get(K+'sm',[]);CNT=LS.get(K+'n',0)}
+   db.doc("config/precios").onSnapshot(s=>{if(dirty||saving)return;CAT=JSON.parse(JSON.stringify((s.exists&&s.data())||{}));if(addVeh()|migP()|migL()|migK()|migR2()|migPM())savePr();render()});
+ }else{P=LS.get(K+'p',[]);CAT=LS.get(K+'c',{});if(addVeh()|migP()|migL()|migK()|migR2()|migPM())LS.set(K+'c',CAT);CLI=LS.get(K+'cl',[]);SAL=LS.get(K+'sa',[]);EGR=LS.get(K+'eg',[]);PRV=LS.get(K+'pv',[]);STK=LS.get(K+'st',[]);SMV=LS.get(K+'sm',[]);CNT=LS.get(K+'n',0)}
  render();if(!db)numerar();
 }
 const PLI='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;vertical-align:-5px;margin-right:6px"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity=".2"/><path d="M12 7.5v9M7.5 12h9"/></svg>';
@@ -531,6 +531,12 @@ function migK(){if(CAT.vxKit)return false;if(!CAT.ress||!CAT.ress.length)CAT.res
 /* repuestos agregados de una vez (al final de la lista); si después se editan o se borran, no se vuelven a agregar */
 function migR2(){if(CAT.vxRJ)return false;if(!CAT.ress||!CAT.ress.length)CAT.ress=RES.slice();const L=CAT.ress;CAT.vxRJ=1;
  ['Retenes','Juntas descarbonizantes'].forEach(n=>{if(!L.some(x=>(x||'').trim().toLowerCase()==n.toLowerCase()))L.push(n)});syncRep();return true}
+/* reparación agregada de una vez debajo de "Pulir cuellos de cigüeñal", con el mismo precio en cada motor (lista de la Cámara y precios cambiados a mano) */
+function migPM(){if(CAT.vxPM)return false;if(!CAT.reps||!CAT.reps.length)CAT.reps=REP.slice();const N='Pulir muñones de árbol de levas',L=CAT.reps,z=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();CAT.vxPM=1;
+ if(L.some(x=>z(x)==z(N)))return true;const ip=L.findIndex(x=>z(x)=='pulir cuellos de ciguenal');
+ if(ip<0){L.push(N);syncRep();return true}const ix=ip+1;lstMove('rep',ix,1);L.splice(ix,0,N);
+ const R=CAT.lrep;if(R&&Array.isArray(R.p)&&Array.isArray(R.p[ip]))R.p[ix]=R.p[ip].slice();
+ const cp=y=>{if(y&&Array.isArray(y.rep)&&hasOv(y,ip))y.rep[ix]=y.rep[ip]};(CAT.motores||[]).forEach(m=>{cp(m);MOTS(m).forEach(cp)});syncRep();return true}
 /* nombre con aclaración entre paréntesis: la aclaración va más chica, debajo */
 const nmH=n=>{const m=/^(.*?)\s*(\(.+\))$/.exec(n||'');return m?`${e(m[1])}<small class=nsub>${e(m[2])}</small>`:e(n)};
 function syncRep(){[['reps',REP],['ress',RES]].forEach(([c,A])=>{const S=CAT[c];if(S&&S.length&&(S.length!=A.length||S.some((n,i)=>n!=A[i]))){A.length=0;A.push(...S)}})}
