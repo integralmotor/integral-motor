@@ -128,7 +128,7 @@ async function init(){
  document.documentElement.lang='es';render();
  try{db=await window.claude.use("db")}catch(x){db=null}
  if(db){
-  db.collection("presupuestos").onSnapshot(s=>{PLd=1;P=s.docs.map(d=>({...JSON.parse(JSON.stringify(d.data())),id:d.id}));render();syncTit();numerar()});
+  db.collection("presupuestos").onSnapshot(s=>{PLd=1;P=s.docs.map(d=>({...JSON.parse(JSON.stringify(d.data())),id:d.id}));render();syncTit();numerar();fixCnt()});
   db.doc("config/contador").onSnapshot(s=>{const n=(s.exists&&+((s.data()||{}).n))||0;if(n>CNT){CNT=n;syncTit()}});
   db.collection("clientes").onSnapshot(s=>{CLL=1;CLd=s.docs.map(d=>({...JSON.parse(JSON.stringify(d.data())),id:d.id}));mixCli();render()});
   db.doc("config/clientes").onSnapshot(s=>{CLo=JSON.parse(JSON.stringify((s.exists&&s.data().list)||[]));mixCli();render();if(CLo.length)mudar('c')});
@@ -285,6 +285,10 @@ const maxNum=()=>P.reduce((a,q)=>Math.max(a,+q.num||0),0),
  idT=q=>{const m=/^q([0-9a-z]+)$/.exec(String(q.id||'')),t=m?parseInt(m[1],36):0;return isNaN(t)?0:t},
  ordC=(a,b)=>(idT(a)-idT(b))||(a.fecha||'').localeCompare(b.fecha||'')||String(a.id).localeCompare(String(b.id));
 let RQ=Promise.resolve();const NP={},ASG={};
+/* arreglo de una sola vez: el contador vuelve al número más alto que existe (para que el siguiente no saltee números gastados sin guardar) */
+let fixT=0;async function fixCnt(){if(!db||fixT)return;fixT=1;try{const f=await db.doc('config/fixnum').get();if(f.exists)return;
+ const r=await db.collection('presupuestos').get(),mx=r.docs.reduce((a,d)=>Math.max(a,+((d.data()||{}).num)||0),0);
+ await db.doc('config/contador').set({n:mx});CNT=mx;await db.doc('config/fixnum').set({hecho:1,n:mx});syncTit();render()}catch(x){fixT=0}}
 async function reservar_(kf){
  let lock=false;
  if(db)for(let i=0;i<5&&!lock;i++){
