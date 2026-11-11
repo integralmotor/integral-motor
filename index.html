@@ -1194,10 +1194,10 @@ function cjAll(){const M=[];
  P.forEach(q=>(q.pagos||[]).forEach((x,i)=>{const m=+x.m||0;if(!m)return;M.push({k:'in',f:x.f||q.fecha||'',fp:x.t||'Efectivo',m,d:q.cliente||'Sin nombre',s:[q.num?'Presup. N° '+pad(q.num):'',x.ch?[x.ch.banco,x.ch.nro?'N° '+x.ch.nro:''].filter(Boolean).join(' '):''].filter(Boolean).join(' · '),qid:q.id})}));
  EGR.forEach(o=>{const m=+o.m||0;if(!m)return;M.push({k:'out',f:o.f||'',fp:o.fp||'Efectivo',m,d:o.con||o.cat||'Egreso',s:[o.cat,o.prov].filter(Boolean).join(' · '),cat:o.cat||'Otros',eid:o.id})});
  SAL.forEach(o=>{const m=+o.m||0;if(!m)return;const ch=[o.banco,o.nro?'N° '+o.nro:''].filter(Boolean).join(' '),cm=Math.min(+o.com||0,m);
-  if(o.efv){/* cambio por efectivo: entra el efectivo recibido; el cheque sale en dos partes: lo cambiado y la comisión que se quedó la financiera */
-   M.push({k:'in',f:o.f||'',fp:'Efectivo',m:m-cm,d:'Efectivo por cambio de cheque',s:[o.dest,ch,o.cli?'de '+o.cli:''].filter(Boolean).join(' · '),sid:o.id});
-   M.push({k:'out',f:o.f||'',fp:'Cheque',m:m-cm,d:o.dest||'Cambio de cheque',s:['Cheque cambiado por efectivo',ch].filter(Boolean).join(' · '),cat:'Cambio de cheque por efectivo',sid:o.id});
-   if(cm>0)M.push({k:'out',f:o.f||'',fp:'Cheque',m:cm,d:'Comisión / recargo por cheque',s:[o.dest,ch,o.comP?o.comP+'%':''].filter(Boolean).join(' · '),cat:'Comisiones por cheques',sid:o.id});return}
+  if(o.efv){/* cambio por efectivo: el cheque sale entero, entra el efectivo por el valor del cheque y la comisión sale como gasto (pérdida por cambiarlo) */
+   M.push({k:'out',f:o.f||'',fp:'Cheque',m,d:o.dest||'Cambio de cheque',s:['Cheque cambiado por efectivo',ch].filter(Boolean).join(' · '),cat:'Cambio de cheque por efectivo',sid:o.id});
+   M.push({k:'in',f:o.f||'',fp:'Efectivo',m,d:'Efectivo por cambio de cheque',s:[o.dest,ch,o.cli?'de '+o.cli:''].filter(Boolean).join(' · '),sid:o.id});
+   if(cm>0)M.push({k:'out',f:o.f||'',fp:'Efectivo',m:cm,d:'Comisión por cambio de cheque',s:[o.dest,ch,o.comP?o.comP+'%':''].filter(Boolean).join(' · '),cat:'Comisiones por cheques',sid:o.id});return}
   M.push({k:'out',f:o.f||'',fp:'Cheque',m,d:o.dest||'Salida de cheque',s:[o.tipo=='Cheque propio'?'Salida (cheque propio)':'Salida (cheque endosado)',o.rps?'Pago de repuestos':'',o.con,ch].filter(Boolean).join(' · '),cat:o.rps?'Repuestos y proveedores':'Pagos con cheque (Salidas)',sid:o.id});
   if(cm>0)M.push({k:'out',f:o.f||'',fp:'Efectivo',m:cm,d:'Comisión / recargo por cheque',s:[o.dest,ch,o.comP?o.comP+'%':''].filter(Boolean).join(' · '),cat:'Comisiones por cheques',sid:o.id})});
  return M.sort((p,q)=>(p.f||'').localeCompare(q.f||'')||(p.k=='in'?0:1)-(q.k=='in'?0:1))}
