@@ -1378,9 +1378,11 @@ function pdfOrd(F,bl){const q=oc,o=q.ord||{},it=o.it||{},{jsPDF}=F?{jsPDF:F}:win
   d.setFont('helvetica',b&&b in it?'bold':'normal');d.text(b,107,y+4.4);d.text(b?cq(b):'',191,y+4.4,{align:'center'});
   y+=h;d.line(12,y,198,y)}
  d.rect(12,top,186,y-top);[26,105,184].forEach(x=>d.line(x,top+8,x,y));d.line(26,top,26,top+8);d.line(184,top,184,top+8);
- y+=7;d.setFont('helvetica','bold');d.setFontSize(12);d.text('OBSERVACIONES:',105,y,{align:'center'});y+=3;
- const bh=Math.max(20,285-y);d.rect(12,y,186,bh);d.setFont('helvetica','normal');d.setFontSize(10);
- const ln=o.obs?d.splitTextToSize(String(o.obs).replace(/\n/g,' '),180):[];if(ln.length)d.text(ln.slice(0,Math.floor((bh-4)/4.6)),15,y+6);
+ /* observaciones: en la orden en blanco, recuadro grande para escribir; en una orden cargada, del tamaño de lo escrito (y no sale si está vacío) */
+ d.setFont('helvetica','normal');d.setFontSize(10);const ln=o.obs&&!bl?d.splitTextToSize(String(o.obs).trim(),180):[];
+ if(bl||ln.length){y+=7;d.setFont('helvetica','bold');d.setFontSize(12);d.text('OBSERVACIONES:',105,y,{align:'center'});y+=3;
+  const bh=bl?Math.max(20,285-y):Math.min(Math.max(10,ln.length*4.6+5),285-y);d.rect(12,y,186,bh);d.setFont('helvetica','normal');d.setFontSize(10);
+  if(ln.length)d.text(ln.slice(0,Math.floor((bh-4)/4.6)),15,y+6)}
  return d}
 const oNm=()=>'orden-'+nQ(oc)+'-'+((oc.cliente||'cliente').trim().replace(/[^A-Za-z0-9 ]/g,'').replace(/\s+/g,'-')||'cliente')+'-'+(oc.ord.f||today())+'.pdf';
 async function oPdf(){const m=$('#msg');if(!window.jspdf){m.className='dc';m.textContent='No se pudo cargar el generador de PDF. Revisá la conexión y recargá la página.';return}
@@ -1647,20 +1649,19 @@ function pdfBlankP(F){const {jsPDF}=F?{jsPDF:F}:window.jspdf,d=new jsPDF({unit:'
  const L=(lb,x,yy,x2)=>{d.text(lb,x,yy);d.setDrawColor(90);d.line(x+d.getTextWidth(lb)+1.5,yy+0.7,x2,yy+0.7);d.setDrawColor(0)};
  let y=pdfHead(d,210,145)+11.5;d.setFont('helvetica','bolditalic');d.setFontSize(18);d.text('PRESUPUESTO N° ________',105,y,{align:'center'});
  y+=10;d.setFont('helvetica','normal');d.setFontSize(B);L('Cliente:',12,y,138);L('Fecha:',145,y,198);y+=7.5;L('Domicilio:',12,y,138);L('Tel.:',145,y,198);y+=7.5;L('Marca:',12,y,100);L('Motor:',105,y,198);y+=9.5;
- const BOT=297-6-121,rh=6.4,Y0=y,NR=Math.max(8,Math.floor((BOT-(Y0+2.6))/rh));
+ const BOT=297-6-88,rh=6.4,Y0=y,NR=Math.max(8,Math.floor((BOT-(Y0+2.6))/rh));
  const col=(t,x0,x1)=>{let yy=Y0;d.setFont('helvetica','bold');d.setFontSize(B);d.text(t,x0,yy);d.setFontSize(A);d.text('Cant.',x1-26.5,yy,{align:'center'});d.text('Importe',x1-10.5,yy,{align:'center'});yy+=1.8;d.line(x0,yy,x1,yy);
   const t0=yy;d.setDrawColor(150);for(let r=1;r<=NR;r++)d.line(x0,t0+r*rh,x1,t0+r*rh);d.line(x1-32,t0,x1-32,t0+NR*rh);d.line(x1-21,t0,x1-21,t0+NR*rh);d.setDrawColor(0);
   yy=t0+NR*rh+6.5;d.setFont('helvetica','bold');d.text('Total $',x1-36,yy,{align:'right'});d.setDrawColor(90);d.line(x1-34,yy+0.7,x1,yy+0.7);d.setDrawColor(0);return yy};
  y=Math.max(col('REPARACIONES',12,102),col('REPUESTOS',108,198))+6;
- const T3=['MANO DE OBRA RECTIFICACIÓN','REPUESTOS RECTIFICACIÓN','MANO DE OBRA TALLER','RECARGO / IVA / DESCUENTO'],l3=6.6,ys=3.8+(T3.length-1)*l3+3,h3=ys+8.4;
+ const T3=['MANO DE OBRA RECTIFICACIÓN','REPUESTOS RECTIFICACIÓN','MANO DE OBRA TALLER','IVA'],l3=6.6,ys=3.8+(T3.length-1)*l3+3,h3=ys+8.4;
  d.setFillColor(127,211,230);d.rect(12,y-1.5,188,h3,'F');d.setFont('helvetica','bold');d.setFontSize(A);
  T3.forEach((lb,i)=>{const yy=y+3.8+i*l3;d.text(lb,14,yy);d.text('$',150,yy);d.setDrawColor(60);d.line(154,yy+0.7,197,yy+0.7);d.setDrawColor(0)});
  d.setFillColor(86,182,212);d.rect(12,y+ys,188,8.4,'F');d.line(12,y+ys,200,y+ys);d.text('SUB TOTAL',14,y+ys+5.6);d.text('$',150,y+ys+5.6);d.line(154,y+ys+6.3,197,y+ys+6.3);y+=h3+6;
- d.setFont('helvetica','bold');d.setFontSize(B);d.text('Forma de pago:',12,y);let x=48;d.setFont('helvetica','normal');[['Efectivo / transferencia',0],['Crédito',0],['Cheque',0]].forEach(([t])=>{d.rect(x,y-3.4,4,4);d.text(t,x+6,y);x+=d.getTextWidth(t)+16});y+=5;
  const tot=(lb)=>{d.setDrawColor(31,63,160);d.setLineWidth&&d.setLineWidth(0.6);d.rect(12,y,188,10);d.setLineWidth&&d.setLineWidth(0.2);d.setDrawColor(0);d.setFont('helvetica','bold');d.setFontSize(13);d.text(lb,15,y+6.8);d.text('$',150,y+6.8);d.setDrawColor(90);d.line(154,y+7.5,197,y+7.5);d.setDrawColor(0);y+=12.5};
- tot('TOTAL');tot('TOTAL C/ RECARGO (CRÉDITO / CHEQUE)');
- d.setFont('helvetica','bold');d.setFontSize(B);d.setTextColor(200,0,0);d.setDrawColor(200,0,0);const hb=lh(B)+6.5;d.roundedRect(12,y,186,hb,4,4);d.text('PRESUPUESTO VÁLIDO POR ______ DÍAS HÁBILES',105,y+6,{align:'center'});y+=hb+3;
- const ln=d.splitTextToSize('LOS TRABAJOS QUE SE EJECUTEN O LOS REPUESTOS COLOCADOS FUERA DE ESTE PRESUPUESTO SE COBRARÁN POR SEPARADO.',176),lt=lh(B)+0.5;d.roundedRect(12,y,186,ln.length*lt+6,4,4);d.text(ln,105,y+6,{align:'center'});d.setTextColor(0);d.setDrawColor(0);return d}
+ tot('TOTAL');y+=1;
+ /* leyendas juntas, como en los presupuestos cargados */
+ d.setFont('helvetica','bold');d.setFontSize(B);d.setTextColor(200,0,0);d.setDrawColor(200,0,0);const ln=['PRESUPUESTO VÁLIDO HASTA EL ____ / ____ / ________'].concat(d.splitTextToSize('LOS TRABAJOS QUE SE EJECUTEN O LOS REPUESTOS COLOCADOS FUERA DE ESTE PRESUPUESTO SE COBRARÁN POR SEPARADO.',176)),lt=lh(B)+0.5;d.roundedRect(12,y,186,ln.length*lt+3,4,4);d.text(ln,105,y+lt*0.8+1.2,{align:'center'});d.setTextColor(0);d.setDrawColor(0);return d}
 /* orden en blanco: la misma orden, sin datos y con renglones para escribir */
 function pdfBlankO(F){const o=oc;oc={id:'',num:0,cliente:'',domicilio:'',tel:'',marca:'',motor:'',ord:{f:'',nm:'',it:{},obs:''}};try{return pdfOrd(F,1)}finally{oc=o}}
 
