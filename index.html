@@ -818,8 +818,8 @@ function tsMot(){if(TSM)return TSM;const c=document.createElement('canvas');c.wi
 /* cada cuántos km se cambia cada cosa: lo último elegido para ese ítem, si no, un valor típico; 0 = no lleva próximo cambio */
 const TSKM=[5000,10000,15000,20000,30000,40000,50000,60000,80000,100000];
 function tsDef(n){try{const v=localStorage.getItem(K+'ti_'+n);if(v!=null)return +v||0}catch(x){}const t=String(n).toLowerCase();
- if(/aceite de motor|filtro de aceite|cambio de aceite|service/.test(t))return 10000;if(/filtro de (aire|combustible|habit)/.test(t))return 15000;
- if(/distribuci|bomba de agua|correa|tensor|rodillo/.test(t))return 60000;if(/buj[ií]a/.test(t))return 30000;
+ if(/aceite de motor|filtro de aceite|cambio de aceite|service|filtro de (aire|combustible|nafta|gas ?oil|habit)/.test(t))return 10000;
+ if(/distribuci|bomba de agua|termostato|correa|tensor|rodillo/.test(t))return 60000;if(/buj[ií]a/.test(t))return 15000;
  if(/refrigerante|aceite de caja|l[ií]quido de (frenos|direcci)/.test(t))return 40000;if(/pastilla|cinta|disco|campana/.test(t))return 30000;return 0}
 function tsIt(){const q=cur;q.tsi=q.tsi||{};return [...q.tm.filter(tmU).map(l=>({k:String(l.n).trim(),t:String(l.n).trim()})),...q.tr.filter(trU).map(l=>({k:String(l.n).trim(),t:tlRn(l)}))].map(o=>({...o,c:o.k in q.tsi?+q.tsi[o.k]||0:tsDef(o.k)}))}
 function tsData(){const q=cur,km=+q.km||0,I=tsIt(),G=[];[...new Set(I.map(o=>o.c))].sort((a,b)=>(a||1e9)-(b||1e9)).forEach(c=>G.push({c,km:c&&km?(km+c).toLocaleString('es-AR'):'',it:I.filter(o=>o.c==c).map(o=>o.t)}));
