@@ -948,6 +948,7 @@ function pdfTalK(F,k){const q=cur,{jsPDF}=F?{jsPDF:F}:window.jspdf,d=new jsPDF({
   L.forEach(l=>{const nl=d.splitTextToSize(l.n,x1-x0-(cant?36:24)*K1);d.text(nl,x0,yy);if(cant)d.text(String(l.c||''),x1-27.5*K1,yy,{align:'center'});if(l.v)d.text(fm(l.v),x1,yy,{align:'right'});yy+=nl.length*lh(A)+z(1.2)});ends.push(yy)};
  col('MANO DE OBRA',LM,12,102,0);col('REPUESTOS',LR,108,198,1);y=Math.max(...ends)+z(2);
  const bx=(x0,x1,cant)=>{d.setDrawColor(0);d.rect(x0-2,Y0-z(5.6),x1-x0+3.5,y-Y0+z(5.6)+z(7.4));if(cant)d.line(x1-33*K1,Y0-z(5.6),x1-33*K1,y-2);d.line(x1-22*K1,Y0-z(5.6),x1-22*K1,y-2)};bx(12,102,0);bx(108,198,1);
+ if(!ip&&M>0&&LM.length){const mid=(Y0+1.8+y-2)/2;d.setFont('helvetica','normal');d.setFontSize(A);d.text(fm(M),101,mid+lh(A)*0.35,{align:'right'})}
  const bar=(x0,x1,v)=>{d.line(x0,y-2,x1,y-2);d.setFont('helvetica','bold');d.setFontSize(A);d.text('SUB TOTAL',x0+2,y+z(3.8));d.text(fm(v),x1-1,y+z(3.8),{align:'right'})};bar(12,102,M);bar(108,198,R);y+=z(15);
  const ob=String(q.obs||'').trim();if(ob){y+=z(0.5);d.setFont('helvetica','normal');d.setFontSize(A);const L=d.splitTextToSize(ob,180),h=lh(A)*(L.length+1)+z(5);d.setDrawColor(0);d.rect(10,y-z(4.5),190,h);d.setFont('helvetica','bolditalic');d.text('Observaciones',105,y,{align:'center'});d.setFont('helvetica','normal');d.text(L,14,y+lh(A)+0.6);y+=h+z(3)}
  /* recuadro celeste y total */
